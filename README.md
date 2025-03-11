@@ -23,5 +23,8 @@ npm run dev
 |---------|---------|
 | ![validating routes](assets/validations.png) | ![custody transfer routes](assets/transfers.png) |
 
+### Gallery: 
+![Gallery gif](assets/gallery.gif)
+
 ### Watch our video to understand how to use the features: 
 [![Watch the video](https://img.youtube.com/vi/QYnjaIpiTPc/0.jpg)](https://www.youtube.com/watch?v=QYnjaIpiTPc)
