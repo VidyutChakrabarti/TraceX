@@ -37,6 +37,7 @@ import {
 } from "chart.js";
 import { Bar, Pie, Line } from "react-chartjs-2";
 import { Download } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 // Register Chart.js components
 ChartJS.register(
@@ -85,6 +86,7 @@ const StatisticsPage: React.FC = () => {
     const [selectedEvidenceId, setSelectedEvidenceId] = useState<string>("");
     const [auditTrail, setAuditTrail] = useState<any>(null);
     const [aggregatedAuditTrail, setAggregatedAuditTrail] = useState<any>(null);
+    const router = useRouter();
 
     // Ref for capturing PDF content
     const contentRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,7 @@ const StatisticsPage: React.FC = () => {
                 if (!access) {
                     setError("Access Denied.");
                     setLoading(false);
+                    router.push("/request-access");
                     return;
                 }
                 setAllowed(true);

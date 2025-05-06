@@ -77,6 +77,7 @@ export default function CasesList() {
         if (!access) {
           setError("You do not have permission to view this page.");
           setLoading(false);
+          router.push("/request-access");
           return;
         }
 

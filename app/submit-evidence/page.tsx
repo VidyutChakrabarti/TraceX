@@ -19,6 +19,7 @@ import {
 import { addEvidence, isCollectorOrAdmin, getName } from "@/utils/helpers";
 import { useStorageUpload } from "@thirdweb-dev/react";
 import { convertIPFSUriToUrl } from "@/utils/helpers";
+import { useRouter } from "next/navigation";
 
 export default function SubmitEvidence() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -28,6 +29,7 @@ export default function SubmitEvidence() {
   const [file, setFile] = useState<File[]>([]);
   const [evidenceType, setEvidenceType] = useState<number>(0);
   const toast = useToast();
+  const router = useRouter();
 
   const caseIdRef = useRef<HTMLInputElement>(null);
   const evidenceIdRef = useRef<HTMLInputElement>(null);
@@ -58,6 +60,7 @@ export default function SubmitEvidence() {
         setIsLoading(false);
         if (!access) {
           setError("You do not have permission to submit evidence.");
+          router.push('/request-access');
         } else {
           // Attempt to auto-fill officer name if stored
           const signerAddress = (await window.ethereum.request({ method: 'eth_accounts' }))[0];

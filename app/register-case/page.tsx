@@ -17,6 +17,7 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { addCase, isCollectorOrAdmin } from "@/utils/helpers";
+import { useRouter } from 'next/navigation';
 
 export default function RegisterCase() {
   const courtIdRef = useRef<HTMLInputElement>(null);
@@ -25,12 +26,15 @@ export default function RegisterCase() {
   const petitionerRef = useRef<HTMLInputElement>(null);
   const respondentRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const toast = useToast();
+
+
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -39,11 +43,11 @@ export default function RegisterCase() {
         setHasAccess(access);
         setIsLoading(false);
         if (!access) {
-          setError("You do not have permission to register a case.");
+          router.push('/request-access');
         }
       } catch (err: any) {
         console.error(err);
-        setError(err.message || "An unknown error occurred.");
+        setError(err.message || 'An unknown error occurred.');
         setIsLoading(false);
       }
     };

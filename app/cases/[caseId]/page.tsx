@@ -79,7 +79,7 @@ export default function CaseDetails({ params }) {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
-  const [canUpdateCustody, setCanUpdateCustody] = useState(false); // analysts can now update custody too
+  const [canUpdateCustody, setCanUpdateCustody] = useState(false);
   const [error, setError] = useState("");
 
   const [caseDetails, setCaseDetails] = useState(null);
@@ -157,6 +157,7 @@ export default function CaseDetails({ params }) {
         if (!access) {
           setError("You do not have permission to view this page.");
           setLoading(false);
+          router.push("/request-access");
           return;
         }
         const editAccess = await isCollectorOrAdmin();

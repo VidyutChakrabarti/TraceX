@@ -22,29 +22,13 @@ export const getAdmin = async () => {
 /**
  * Get the role of the specified address.
  */
-// export const getRole = async (address: string) => {
-//   try {
-//     if (!ethereumService.contract) {
-//       await ethereumService.initialize();
-//     }
-//     const contract = ethereumService.contract!;
-//     const role = await contract.roles(address);
-//     return role;
-//   } catch (e) {
-//     console.error(e);
-//     throw e;
-//   }
-// };
-
-// Unpermissioned function to get the role of a fixed address
-export const getRole = async () => {
+export const getRole = async (address: string) => {
   try {
     if (!ethereumService.contract) {
       await ethereumService.initialize();
     }
     const contract = ethereumService.contract!;
-    const fixedAddress = "0x7Aae3c3129442abdf648cA1756bC52047aeE006d".toLowerCase();
-    const role = await contract.roles(fixedAddress);
+    const role = await contract.roles(address);
     return role;
   } catch (e) {
     console.error(e);
