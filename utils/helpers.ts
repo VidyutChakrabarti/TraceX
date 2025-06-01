@@ -397,6 +397,13 @@ export const transferEvidenceCustody = async (
     const signer = ethereumService.signer!;
     const contract = ethereumService.contract!;
 
+    // Check if the user is at least an analyst
+    const userAddress = (await signer.getAddress()).toLowerCase();
+    const role = await getRole(userAddress);
+    if (role < 1) {
+      throw new Error("Only analysts or higher can transfer custody.");
+    }
+
     // Typecast caseId and evidenceId to numbers
     const caseIdNum = Number(caseId);
     const evidenceIdNum = Number(evidenceId);
@@ -423,8 +430,6 @@ export const transferEvidenceCustody = async (
     const blockNumber = receipt.blockNumber;
 
     // Audit trail logging
-    const userAddress = (await signer.getAddress()).toLowerCase();
-
     const auditTrailData = {
       evidenceId: evidenceIdNum,
       actions: [
@@ -473,6 +478,14 @@ export const updateCustodyChain = async (
     }
     const signer = ethereumService.signer!;
     const contract = ethereumService.contract!;
+    // Check if the user is at least an analyst for custody transfer
+    if (actionType === "Custody transferred") {
+      const userAddress = (await signer.getAddress()).toLowerCase();
+      const role = await getRole(userAddress);
+      if (role < 1) {
+        throw new Error("Only analysts or higher can transfer custody.");
+      }
+    }
     let receipt = null;
     if (actionType === "Custody transferred") {
       if (!receiverAddress || !ethers.utils.isAddress(receiverAddress)) {

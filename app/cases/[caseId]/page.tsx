@@ -242,16 +242,19 @@ export default function CaseDetails({ params }) {
           officerNameRef.current.value = name;
         }
       }
-    };
-    const getLocation = () => {
+    }; const getLocation = () => {
       if ("geolocation" in navigator && locationRef.current) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
             locationRef.current.value = coords;
+            // Also set userLocation state for custody transfer
+            setUserLocation([position.coords.latitude, position.coords.longitude]);
           },
           (error) => {
             console.error("Error getting location:", error);
+            // Set default location if geolocation fails
+            setUserLocation([21.1458, 79.0882]); // Default to Nagpur coordinates
           }
         );
       }
@@ -347,16 +350,16 @@ Start Date: ${caseDetails.startDateTime}
 Submitted By: ${caseDetails.submittedBy}
 Evidences:
 ${evidences
-  .map(
-    (evidence) =>
-      `Evidence ID: ${evidence.evidenceId}
+          .map(
+            (evidence) =>
+              `Evidence ID: ${evidence.evidenceId}
 Description: ${evidence.description}
 Officer Name: ${evidence.officerName}
 Location: ${evidence.location}
 Evidence Type: ${evidence.evidenceType}
 Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
-  )
-  .join("\n")}
+          )
+          .join("\n")}
 `;
       const llm = new ChatGoogleGenerativeAI({
         model: "gemini-1.5-pro",
@@ -476,11 +479,18 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         });
         setIsSubmittingUpdate(false);
         return;
-      }
-      if (
+      } if (
         updateActionType === "Custody transferred" &&
         (!updateReceiver || !userLocation || !destinationCoords)
       ) {
+        console.log("Custody transfer validation failed:", {
+          updateReceiver,
+          userLocation,
+          destinationCoords,
+          hasUpdateReceiver: !!updateReceiver,
+          hasUserLocation: !!userLocation,
+          hasDestinationCoords: !!destinationCoords
+        });
         toast({
           title:
             "Receiver, current location, and destination are required for custody transfer.",
@@ -515,19 +525,39 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         updateActionType === "Analysis updated"
           ? analysisDocumentUrl
           : undefined
-      );
-      // Get transactionId from response
-      const transactionId =
-        (response as any).transactionId ||
-        (response.data && response.data.transactionId);
+      );      // Get transactionHash from response (stored in the latest action)
+      const transactionHash =
+        response.data &&
+          response.data.actions &&
+          response.data.actions.length > 0
+          ? response.data.actions[response.data.actions.length - 1].transactionHash
+          : null;
       if (response.status) {
         // 2. If custody transferred, store route in MongoDB
-        if (updateActionType === "Custody transferred" && transactionId) {
-          await fetch("/api/custodyRoute", {
+        if (updateActionType === "Custody transferred" && transactionHash) {
+          console.log("Storing custody route with:", {
+            transactionId: transactionHash,
+            evidenceId: selectedUpdateEvidence.evidenceId,
+            from: userLocation
+              ? { lat: userLocation[0], lng: userLocation[1] }
+              : undefined,
+            to: destinationCoords
+              ? { lat: destinationCoords[0], lng: destinationCoords[1] }
+              : undefined,
+            route:
+              userLocation && destinationCoords
+                ? [
+                  { lat: userLocation[0], lng: userLocation[1] },
+                  { lat: destinationCoords[0], lng: destinationCoords[1] },
+                ]
+                : [],
+          });
+
+          const custodyRouteResponse = await fetch("/api/custodyRoute", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              transactionId,
+              transactionId: transactionHash,
               evidenceId: selectedUpdateEvidence.evidenceId,
               from: userLocation
                 ? { lat: userLocation[0], lng: userLocation[1] }
@@ -538,12 +568,19 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
               route:
                 userLocation && destinationCoords
                   ? [
-                      { lat: userLocation[0], lng: userLocation[1] },
-                      { lat: destinationCoords[0], lng: destinationCoords[1] },
-                    ]
+                    { lat: userLocation[0], lng: userLocation[1] },
+                    { lat: destinationCoords[0], lng: destinationCoords[1] },
+                  ]
                   : [],
             }),
           });
+
+          const custodyRouteData = await custodyRouteResponse.json();
+          console.log("Custody route storage response:", custodyRouteData);
+
+          if (!custodyRouteResponse.ok) {
+            console.error("Failed to store custody route:", custodyRouteData.error);
+          }
         }
         toast({
           title: "Custody chain updated successfully.",
@@ -782,6 +819,31 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
     },
   };
 
+  // Function to get current location for custody transfer
+  const getCurrentLocationForCustody = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          console.log("Current location set for custody transfer:", [position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.error("Error getting current location:", error);
+          // Set default location if geolocation fails
+          setUserLocation([21.1458, 79.0882]); // Default to Nagpur coordinates
+          console.log("Default location set for custody transfer:", [21.1458, 79.0882]);
+        }
+      );
+    }
+  };
+
+  useEffect(() => {
+    // Get current location when custody transfer modal opens
+    if (isUpdateChainOpen) {
+      getCurrentLocationForCustody();
+    }
+  }, [isUpdateChainOpen]);
+
   if (loading) {
     return (
       <Box
@@ -971,11 +1033,10 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                   >
                     <AiOutlineCheckCircle className="text-green-500 text-m cursor-pointer" />
                     <span
-                      className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 w-40 bg-black text-white text-center text-xs rounded py-1 transition-opacity duration-300 ${
-                        tooltipVisible
+                      className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 w-40 bg-black text-white text-center text-xs rounded py-1 transition-opacity duration-300 ${tooltipVisible
                           ? "opacity-100"
                           : "opacity-0 group-hover:opacity-100"
-                      }`}
+                        }`}
                     >
                       Validated with EtherScan
                     </span>
@@ -996,21 +1057,23 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                   mb={4}
                   wrap={["wrap", "nowrap"]}
                 >
-                  {canUpdateCustody && (
-                    <Button
-                      colorScheme="purple"
-                      size={["sm", "md"]}
-                      onClick={() => {
-                        setSelectedUpdateEvidence(evidence);
-                        setUpdateActionType("");
-                        setUpdateDescription("");
-                        setUpdateReceiver("");
-                        setAnalysisDocumentUrl("");
-                        onUpdateChainOpen();
-                      }}
-                    >
-                      Update Custody Chain
-                    </Button>
+                  {canUpdateCustody && (<Button
+                    colorScheme="purple"
+                    size={["sm", "md"]}
+                    onClick={() => {
+                      setSelectedUpdateEvidence(evidence);
+                      setUpdateActionType("");
+                      setUpdateDescription("");
+                      setUpdateReceiver("");
+                      setAnalysisDocumentUrl("");
+                      setDestinationInput("");
+                      setDestinationCoords(null);
+                      getCurrentLocationForCustody(); // Get location when modal opens
+                      onUpdateChainOpen();
+                    }}
+                  >
+                    Update Custody Chain
+                  </Button>
                   )}
                   <Button
                     onClick={() => fetchAuditTrail(evidence.evidenceId)}
@@ -1024,7 +1087,7 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                     ((adminAddress && currentUserAddress === adminAddress) ||
                       (evidence.owner &&
                         evidence.owner.toLowerCase() ===
-                          currentUserAddress)) && (
+                        currentUserAddress)) && (
                       <Button
                         as="a"
                         href={evidence.fileHash}
@@ -1175,18 +1238,18 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                                 </Text>
                                 {currentUserAddress ===
                                   action.approval.receiver.toLowerCase() && (
-                                  <Button
-                                    colorScheme="blue"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleSignAuditAction(
-                                        action.transactionHash
-                                      )
-                                    }
-                                  >
-                                    Digitally Sign
-                                  </Button>
-                                )}
+                                    <Button
+                                      colorScheme="blue"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleSignAuditAction(
+                                          action.transactionHash
+                                        )
+                                      }
+                                    >
+                                      Digitally Sign
+                                    </Button>
+                                  )}
                               </>
                             ) : (
                               <Text color="green.500" fontSize="sm">

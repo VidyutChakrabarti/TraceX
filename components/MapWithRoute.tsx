@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMap, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import axios from 'axios';
@@ -17,7 +17,18 @@ const GoogleSatLayer = () => {
     return () => {
       map.removeLayer(googleSat);
     };
-  }, [map]);
+  }, [map]); return null;
+};
+
+// Component to handle map click events
+const MapClickHandler = ({ onMapClick, allowSelectDestination }) => {
+  useMapEvents({
+    click: (e) => {
+      if (allowSelectDestination && onMapClick) {
+        onMapClick(e);
+      }
+    },
+  });
   return null;
 };
 
@@ -38,6 +49,7 @@ export default function MapWithRoute({
   routeCoords,
   setRouteCoords,
   allowSelectDestination = true,
+  customHeight = '350px',
 }) {
   const mapRef = useRef(null);
 
@@ -85,19 +97,17 @@ export default function MapWithRoute({
     const destCoords = [e.latlng.lat, e.latlng.lng];
     setDestination(destCoords);
     getRoute(destCoords);
-  };
-
-  return (
-    <div style={{ height: '350px', width: '100%' }}>
+  }; return (
+    <div style={{ height: customHeight, width: '100%' }}>
       {userLocation && (
         <MapContainer
           center={userLocation}
           zoom={13}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
-          onClick={handleMapClick}
         >
           <GoogleSatLayer />
+          <MapClickHandler onMapClick={handleMapClick} allowSelectDestination={allowSelectDestination} />
           <Marker position={userLocation} icon={greenIcon}>
             <Popup>
               <span style={{ color: '#222', background: '#fff', padding: 2 }}>Your Location</span>

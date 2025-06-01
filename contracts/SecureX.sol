@@ -297,7 +297,7 @@ contract SecurexPrivateV2 {
         uint256 _caseId,
         uint256 _evidenceId,
         address _newOwner
-    ) external onlyCollector {
+    ) external atLeastAnalyst {
         require(cases[_caseId].initialised, "Case does not exist");
         require(
             roles[_newOwner] != Role.None,

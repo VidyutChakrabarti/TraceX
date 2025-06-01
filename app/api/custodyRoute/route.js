@@ -5,13 +5,19 @@ export async function POST(req) {
   await dbConnect();
   try {
     const body = await req.json();
+    console.log("Received custody route data:", body);
+
     const { transactionId, evidenceId, from, to, route } = body;
     if (!transactionId || !evidenceId || !from || !to || !route) {
+      console.log("Missing required fields:", { transactionId, evidenceId, from, to, route });
       return new Response(JSON.stringify({ success: false, error: 'Missing required fields.' }), { status: 400 });
     }
+
     const doc = await CustodyRoute.create({ transactionId, evidenceId, from, to, route });
+    console.log("Created custody route document:", doc);
     return new Response(JSON.stringify({ success: true, data: doc }), { status: 201 });
   } catch (err) {
+    console.error("Error creating custody route:", err);
     return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500 });
   }
 }
