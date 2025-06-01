@@ -49,6 +49,7 @@ import {
   LinearScale,
   BarElement,
   TimeScale,
+  TimeSeriesScale,
   Tooltip,
   BubbleController,
   PointElement,
@@ -57,6 +58,8 @@ import "chartjs-adapter-date-fns";
 import jsPDF from "jspdf";
 import { useStorageUpload } from "@thirdweb-dev/react";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import dynamic from "next/dynamic";
+import AuditTrailRouteMap from "@/components/AuditTrailRouteMap";
 
 // Register necessary Chart.js components.
 ChartJS.register(
@@ -64,11 +67,16 @@ ChartJS.register(
   LinearScale,
   BarElement,
   TimeScale,
+  TimeSeriesScale,
   Tooltip,
   BubbleController,
   PointElement,
   Colors
 );
+
+const MapWithRoute = dynamic(() => import("@/components/MapWithRoute"), {
+  ssr: false,
+});
 
 export default function CaseDetails({ params }) {
   const router = useRouter();
@@ -107,6 +115,13 @@ export default function CaseDetails({ params }) {
   const [updateDescription, setUpdateDescription] = useState("");
   const [updateReceiver, setUpdateReceiver] = useState("");
   const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
+  // Map state for custody transfer
+  const [destinationInput, setDestinationInput] = useState("");
+  const [destinationCoords, setDestinationCoords] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [routeCoords, setRouteCoords] = useState([]);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [geocodingError, setGeocodingError] = useState(""); // FIXED: initialized with an empty string
 
   // For Analysis upload in Update Custody Chain modal.
   const [analysisDocumentUrl, setAnalysisDocumentUrl] = useState("");
@@ -190,7 +205,10 @@ export default function CaseDetails({ params }) {
     // Get current user's wallet address.
     const fetchCurrentUser = async () => {
       if (window.ethereum) {
-        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        const accounts = (await window.ethereum.request({
+          method: "eth_accounts",
+          params: [],
+        })) as string[];
         if (accounts && accounts.length > 0) {
           setCurrentUserAddress(accounts[0].toLowerCase());
         }
@@ -214,7 +232,10 @@ export default function CaseDetails({ params }) {
     // Pre-fill officer name and obtain location.
     const fetchOfficerName = async () => {
       if (officerNameRef.current && window.ethereum) {
-        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        const accounts = (await window.ethereum.request({
+          method: "eth_accounts",
+          params: [],
+        })) as string[];
         const signerAddress = accounts[0];
         const name = await getName(signerAddress);
         if (name) {
@@ -245,7 +266,10 @@ export default function CaseDetails({ params }) {
       if (!currentUserAddress || evidences.length === 0) return;
       const map = {};
       const promises = evidences.map(async (evidence) => {
-        const pending = await getPendingApprovalForEvidence(evidence.evidenceId, currentUserAddress);
+        const pending = await getPendingApprovalForEvidence(
+          evidence.evidenceId,
+          currentUserAddress
+        );
         if (pending) {
           map[evidence.evidenceId] = pending;
         }
@@ -323,16 +347,16 @@ Start Date: ${caseDetails.startDateTime}
 Submitted By: ${caseDetails.submittedBy}
 Evidences:
 ${evidences
-          .map(
-            (evidence) =>
-              `Evidence ID: ${evidence.evidenceId}
+  .map(
+    (evidence) =>
+      `Evidence ID: ${evidence.evidenceId}
 Description: ${evidence.description}
 Officer Name: ${evidence.officerName}
 Location: ${evidence.location}
 Evidence Type: ${evidence.evidenceType}
 Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
-          )
-          .join("\n")}
+  )
+  .join("\n")}
 `;
       const llm = new ChatGoogleGenerativeAI({
         model: "gemini-1.5-pro",
@@ -340,11 +364,15 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
       });
       const response = await llm.invoke([{ role: "user", content: prompt }]);
-      const aiReportContent = response.content;
+      let aiReportContent = response.content;
       if (!aiReportContent) {
         throw new Error("Failed to generate AI report.");
       }
-      setAiReport(aiReportContent);
+      setAiReport(
+        Array.isArray(aiReportContent)
+          ? aiReportContent.map((c: any) => c.text || c).join("")
+          : aiReportContent
+      );
     } catch (err) {
       console.error(err);
       toast({
@@ -406,6 +434,32 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
     }
   };
 
+  // Geocode destination input to coordinates
+  const geocodeDestination = async () => {
+    setGeocodingLoading(true);
+    setGeocodingError("");
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          destinationInput
+        )}&format=json`
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setDestinationCoords([
+          parseFloat(data[0].lat),
+          parseFloat(data[0].lon),
+        ]);
+      } else {
+        setGeocodingError("Location not found. Please enter a valid location.");
+      }
+    } catch (err) {
+      setGeocodingError("Failed to fetch coordinates. Try again.");
+    } finally {
+      setGeocodingLoading(false);
+    }
+  };
+
   // Handler for "Update Custody Chain" modal submission.
   const handleUpdateChainSubmit = async () => {
     setIsSubmittingUpdate(true);
@@ -423,9 +477,13 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         setIsSubmittingUpdate(false);
         return;
       }
-      if (updateActionType === "Custody transferred" && !updateReceiver) {
+      if (
+        updateActionType === "Custody transferred" &&
+        (!updateReceiver || !userLocation || !destinationCoords)
+      ) {
         toast({
-          title: "Receiver wallet address is required for custody transfer.",
+          title:
+            "Receiver, current location, and destination are required for custody transfer.",
           status: "error",
           duration: 5000,
           isClosable: true,
@@ -447,15 +505,46 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
       if (updateActionType === "Custody transferred") {
         receiver = updateReceiver.trim();
       }
+      // 1. Update custody chain (blockchain)
       const response = await updateCustodyChain(
         caseId,
         selectedUpdateEvidence.evidenceId,
         updateActionType,
         updateDescription,
         updateActionType === "Custody transferred" ? receiver : undefined,
-        updateActionType === "Analysis updated" ? analysisDocumentUrl : undefined
+        updateActionType === "Analysis updated"
+          ? analysisDocumentUrl
+          : undefined
       );
+      // Get transactionId from response
+      const transactionId =
+        (response as any).transactionId ||
+        (response.data && response.data.transactionId);
       if (response.status) {
+        // 2. If custody transferred, store route in MongoDB
+        if (updateActionType === "Custody transferred" && transactionId) {
+          await fetch("/api/custodyRoute", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              transactionId,
+              evidenceId: selectedUpdateEvidence.evidenceId,
+              from: userLocation
+                ? { lat: userLocation[0], lng: userLocation[1] }
+                : undefined,
+              to: destinationCoords
+                ? { lat: destinationCoords[0], lng: destinationCoords[1] }
+                : undefined,
+              route:
+                userLocation && destinationCoords
+                  ? [
+                      { lat: userLocation[0], lng: userLocation[1] },
+                      { lat: destinationCoords[0], lng: destinationCoords[1] },
+                    ]
+                  : [],
+            }),
+          });
+        }
         toast({
           title: "Custody chain updated successfully.",
           status: "success",
@@ -547,7 +636,11 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         return;
       }
       const evidenceIdParsed = parseInt(evidenceIdRef.current.value);
-      if (isNaN(evidenceIdParsed) || evidenceIdParsed < 100000 || evidenceIdParsed > 999999) {
+      if (
+        isNaN(evidenceIdParsed) ||
+        evidenceIdParsed < 100000 ||
+        evidenceIdParsed > 999999
+      ) {
         toast({
           title: "Invalid Evidence ID",
           description: "Evidence ID must be a 6-digit number.",
@@ -567,7 +660,7 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
         locationRef.current.value,
         evidenceDescriptionRef.current.value,
         ipfsLink,
-        evidenceType
+        evidenceType.toString()
       );
       if (response.status) {
         toast({
@@ -660,7 +753,7 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
     maintainAspectRatio: false,
     scales: {
       x: {
-        type: "time",
+        type: "timeseries", // Chart.js v4 expects 'timeseries' for time-based charts
         time: { unit: "day" },
         title: { display: true, text: "Date" },
       },
@@ -691,14 +784,24 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
 
   if (loading) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <Spinner size="xl" />
       </Box>
     );
   }
   if (!hasAccess) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <Alert status="error">
           <AlertIcon />
           {error || "You do not have permission to view this page."}
@@ -708,12 +811,22 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
   }
 
   return (
-    <Box minH="100vh" pt={["4", "8", "12"]} px={["4", "6", "8"]} maxW="7xl" mx="auto">
+    <Box
+      minH="100vh"
+      pt={["4", "8", "12"]}
+      px={["4", "6", "8"]}
+      maxW="7xl"
+      mx="auto"
+    >
       <Heading as="h1" size={["lg", "xl"]} mb={[2, 6]}>
         Case Details (ID: {caseId})
       </Heading>
 
-      <Box display="flex" flexDirection={["column", "column", "row"]} gap={[4, 6]}>
+      <Box
+        display="flex"
+        flexDirection={["column", "column", "row"]}
+        gap={[4, 6]}
+      >
         <Box flex="1" pr={[0, 0, 4]}>
           {caseDetails && (
             <>
@@ -736,7 +849,8 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                 <strong>Status:</strong> {caseDetails.status}
               </Text>
               <Text>
-                <strong>Start Date:</strong> {new Date(caseDetails.startDateTime).toLocaleDateString()}
+                <strong>Start Date:</strong>{" "}
+                {new Date(caseDetails.startDateTime).toLocaleDateString()}
               </Text>
               <Text>
                 <strong>Submitted By:</strong> {caseDetails.submittedBy}
@@ -744,11 +858,19 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
             </>
           )}
           <HStack justify="center" spacing={["2", "4"]} mt={4} wrap="wrap">
-            <Button colorScheme="teal" onClick={generateAIReport} size={["sm", "md"]}>
+            <Button
+              colorScheme="teal"
+              onClick={generateAIReport}
+              size={["sm", "md"]}
+            >
               Generate AI Audit Report
             </Button>
             {canEdit && (
-              <Button colorScheme="teal" onClick={onEvidenceOpen} size={["sm", "md"]}>
+              <Button
+                colorScheme="teal"
+                onClick={onEvidenceOpen}
+                size={["sm", "md"]}
+              >
                 + Add Evidence
               </Button>
             )}
@@ -757,16 +879,40 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
 
         <Box
           flex="1"
-          height={["250px", "350px", "400px"]}
-          maxH={["255px", "355px", "405px"]}
+          height={["350px", "400px", "450px"]}
+          maxH={["350px", "400px", "450px"]}
+          minH={["350px", "400px", "450px"]}
           position="relative"
-          overflow="auto"
+          overflow="visible"
+          bg="white"
+          borderRadius="lg"
+          boxShadow="md"
+          p={[2, 4]}
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
         >
           <Heading as="h2" size={["md", "lg"]} mb={[2, 4]}>
             Case Timeline
           </Heading>
           {bubbleEvents.length > 0 ? (
-            <Chart style={{ height: "100%" }} type="bubble" data={bubbleData} options={bubbleOptions} />
+            <Box w="100%" h="100%" minH="250px" maxH="400px">
+              <Chart
+                style={{ height: "100%", width: "100%" }}
+                type="bubble"
+                data={bubbleData}
+                options={{
+                  ...bubbleOptions,
+                  plugins: {
+                    ...bubbleOptions.plugins,
+                    legend: { display: false },
+                    tooltip: bubbleOptions.plugins.tooltip,
+                  },
+                  layout: { padding: 20 },
+                }}
+              />
+            </Box>
           ) : (
             <Text>No evidences to display in the timeline.</Text>
           )}
@@ -807,7 +953,8 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                   <strong>Description:</strong> {evidence.description}
                 </Text>
                 <Text>
-                  <strong>Date:</strong> {new Date(evidence.timestamp * 1000).toLocaleString()}
+                  <strong>Date:</strong>{" "}
+                  {new Date(evidence.timestamp * 1000).toLocaleString()}
                 </Text>
                 <Text>
                   <strong>Officer Name:</strong> {evidence.officerName}
@@ -817,13 +964,18 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                 </Text>
                 <Text>
                   <strong>File Hash URL:</strong>{" "}
-
-                  {evidence.fileHash.split('/')[4]}
-                  <span className="relative inline-block ml-1 group" onClick={handleClick}>
+                  {evidence.fileHash.split("/")[4]}
+                  <span
+                    className="relative inline-block ml-1 group"
+                    onClick={handleClick}
+                  >
                     <AiOutlineCheckCircle className="text-green-500 text-m cursor-pointer" />
                     <span
-                      className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 w-40 bg-black text-white text-center text-xs rounded py-1 transition-opacity duration-300 ${tooltipVisible ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                        }`}
+                      className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 w-40 bg-black text-white text-center text-xs rounded py-1 transition-opacity duration-300 ${
+                        tooltipVisible
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100"
+                      }`}
                     >
                       Validated with EtherScan
                     </span>
@@ -837,7 +989,13 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                     Approval Pending for Transfer
                   </Text>
                 )}
-                <HStack spacing={["2", "4"]} justify={["center", "flex-end"]} mt={5} mb={4} wrap={["wrap", "nowrap"]}>
+                <HStack
+                  spacing={["2", "4"]}
+                  justify={["center", "flex-end"]}
+                  mt={5}
+                  mb={4}
+                  wrap={["wrap", "nowrap"]}
+                >
                   {canUpdateCustody && (
                     <Button
                       colorScheme="purple"
@@ -854,12 +1012,19 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                       Update Custody Chain
                     </Button>
                   )}
-                  <Button onClick={() => fetchAuditTrail(evidence.evidenceId)} colorScheme="blue" size={["sm", "md"]}>
+                  <Button
+                    onClick={() => fetchAuditTrail(evidence.evidenceId)}
+                    colorScheme="blue"
+                    size={["sm", "md"]}
+                  >
                     View Audit Trail
                   </Button>
-                  { // NEW: Only show Download Evidence button if current user is admin OR is the current custody owner.
+                  {
+                    // NEW: Only show Download Evidence button if current user is admin OR is the current custody owner.
                     ((adminAddress && currentUserAddress === adminAddress) ||
-                      (evidence.owner && evidence.owner.toLowerCase() === currentUserAddress)) && (
+                      (evidence.owner &&
+                        evidence.owner.toLowerCase() ===
+                          currentUserAddress)) && (
                       <Button
                         as="a"
                         href={evidence.fileHash}
@@ -920,19 +1085,28 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
             </FormControl>
             <FormControl id="evidenceDescription" mb={4} isRequired>
               <FormLabel>Evidence Description</FormLabel>
-              <Textarea placeholder="Enter evidence description" ref={evidenceDescriptionRef} />
+              <Textarea
+                placeholder="Enter evidence description"
+                ref={evidenceDescriptionRef}
+              />
             </FormControl>
             <FormControl id="file" mb={6} isRequired>
               <FormLabel>Upload Evidence File</FormLabel>
               <Input
                 type="file"
                 accept=""
-                onChange={(e) => setFile(e.target.files ? Array.from(e.target.files) : [])}
+                onChange={(e) =>
+                  setFile(e.target.files ? Array.from(e.target.files) : [])
+                }
               />
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal" isLoading={isSubmittingEvidence} onClick={handleAddEvidence}>
+            <Button
+              colorScheme="teal"
+              isLoading={isSubmittingEvidence}
+              onClick={handleAddEvidence}
+            >
               Submit Evidence
             </Button>
             <Button variant="ghost" onClick={onEvidenceClose}>
@@ -959,44 +1133,84 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                 <VStack spacing={3} align="stretch" mt={4}>
                   {auditTrail.actions.map((action, index) => (
                     <Box key={index} p={3} borderWidth="1px" borderRadius="md">
-                      <Text><strong>Action Type:</strong> {action.actionType}</Text>
-                      <Text><strong>User Address:</strong> {action.userAddress}</Text>
-                      <Text><strong>Timestamp:</strong> {new Date(action.timestamp).toLocaleString()}</Text>
-                      <Text><strong>Details:</strong> {action.details}</Text>
-                      <Text><strong>Transaction Hash:</strong> {action.transactionHash}</Text>
-                      <Text><strong>Block Number:</strong> {action.blockNumber}</Text>
-                      {action.actionType === "Custody transferred" && action.approval && (
-                        <>
-                          {action.approval.pending ? (
-                            <>
-                              <Text color="red.500" fontSize="sm">
-                                This transaction was not digitally signed
-                              </Text>
-                              {currentUserAddress === action.approval.receiver.toLowerCase() && (
-                                <Button colorScheme="blue" size="sm" onClick={() => handleSignAuditAction(action.transactionHash)}>
-                                  Digitally Sign
-                                </Button>
-                              )}
-                            </>
-                          ) : (
-                            <Text color="green.500" fontSize="sm">
-                              This transaction was approved by {action.approval.approvedBy}
-                              <br />
-                              at {action.approval.approvedAt}
+                      <Text>
+                        <strong>Action Type:</strong> {action.actionType}
+                      </Text>
+                      <Text>
+                        <strong>User Address:</strong> {action.userAddress}
+                      </Text>
+                      <Text>
+                        <strong>Timestamp:</strong>{" "}
+                        {new Date(action.timestamp).toLocaleString()}
+                      </Text>
+                      <Text>
+                        <strong>Details:</strong> {action.details}
+                      </Text>
+                      <Text>
+                        <strong>Transaction Hash:</strong>{" "}
+                        {action.transactionHash}
+                      </Text>
+                      <Text>
+                        <strong>Block Number:</strong> {action.blockNumber}
+                      </Text>
+                      {/* Map for custody transfer route */}
+                      {action.actionType === "Custody transferred" &&
+                        action.transactionHash && (
+                          <Box mt={3}>
+                            <Text fontWeight="bold" mb={1}>
+                              Custody Transfer Route:
                             </Text>
-                          )}
-                        </>
-                      )}
-                      {action.actionType === "Analysis updated" && action.analysisDocumentUrl && (
-                        <Button
-                          colorScheme="purple"
-                          size="sm"
-                          mt={2}
-                          onClick={() => window.open(action.analysisDocumentUrl, "_blank")}
-                        >
-                          Download Analysis
-                        </Button>
-                      )}
+                            <AuditTrailRouteMap
+                              transactionId={action.transactionHash}
+                            />
+                          </Box>
+                        )}
+                      {action.actionType === "Custody transferred" &&
+                        action.approval && (
+                          <>
+                            {action.approval.pending ? (
+                              <>
+                                <Text color="red.500" fontSize="sm">
+                                  This transaction was not digitally signed
+                                </Text>
+                                {currentUserAddress ===
+                                  action.approval.receiver.toLowerCase() && (
+                                  <Button
+                                    colorScheme="blue"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleSignAuditAction(
+                                        action.transactionHash
+                                      )
+                                    }
+                                  >
+                                    Digitally Sign
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
+                              <Text color="green.500" fontSize="sm">
+                                This transaction was approved by{" "}
+                                {action.approval.approvedBy}
+                                <br />
+                                at {action.approval.approvedAt}
+                              </Text>
+                            )}
+                          </>
+                        )}
+                      {action.actionType === "Analysis updated" &&
+                        action.analysisDocumentUrl && (
+                          <Button
+                            colorScheme="purple"
+                            size="sm"
+                            mt={2}
+                            onClick={() =>
+                              window.open(action.analysisDocumentUrl, "_blank")
+                            }
+                          >
+                            Download Analysis
+                          </Button>
+                        )}
                     </Box>
                   ))}
                 </VStack>
@@ -1048,7 +1262,6 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                 value={updateActionType}
                 onChange={(e) => {
                   setUpdateActionType(e.target.value);
-                  // Reset analysis document URL when action type changes.
                   setAnalysisDocumentUrl("");
                 }}
               >
@@ -1078,11 +1291,64 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                     onChange={(e) => setUpdateReceiver(e.target.value)}
                   />
                 </FormControl>
+                <FormControl id="destinationInput" mb={2} isRequired>
+                  <FormLabel>Destination Location</FormLabel>
+                  <Input
+                    placeholder="Enter destination (e.g., Gittikhadan Police Station)"
+                    value={destinationInput}
+                    onChange={(e) => setDestinationInput(e.target.value)}
+                    onBlur={geocodeDestination}
+                    isDisabled={geocodingLoading}
+                  />
+                  <Button
+                    size="sm"
+                    mt={2}
+                    colorScheme="blue"
+                    onClick={geocodeDestination}
+                    isLoading={geocodingLoading}
+                  >
+                    Convert to Coordinates
+                  </Button>
+                  {geocodingError && (
+                    <Text color="red.500" fontSize="sm">
+                      {geocodingError}
+                    </Text>
+                  )}
+                </FormControl>
+                {/* Map for selecting and visualizing destination location */}
+                <Box mb={4}>
+                  <Text mb={2} fontWeight="bold">
+                    Destination Location Map
+                  </Text>
+                  <MapWithRoute
+                    userLocation={userLocation}
+                    setUserLocation={setUserLocation}
+                    destination={destinationCoords}
+                    setDestination={setDestinationCoords}
+                    routeCoords={
+                      destinationCoords && userLocation
+                        ? [userLocation, destinationCoords]
+                        : []
+                    }
+                    setRouteCoords={setRouteCoords}
+                    allowSelectDestination={false}
+                  />
+                  {destinationCoords && (
+                    <Text fontSize="sm" color="green.500" mt={2}>
+                      Selected coordinates: {destinationCoords[0]}, {destinationCoords[1]}
+                    </Text>
+                  )}
+                </Box>
               </>
             )}
             {updateActionType === "Analysis updated" && (
               <>
-                <Button colorScheme="blue" onClick={handleTriggerAnalysisUpload} mb={4} isLoading={isUploadingAnalysis}>
+                <Button
+                  colorScheme="blue"
+                  onClick={handleTriggerAnalysisUpload}
+                  mb={4}
+                  isLoading={isUploadingAnalysis}
+                >
                   Upload Analysis
                 </Button>
                 <input
@@ -1101,7 +1367,11 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
             )}
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal" isLoading={isSubmittingUpdate} onClick={handleUpdateChainSubmit}>
+            <Button
+              colorScheme="teal"
+              isLoading={isSubmittingUpdate}
+              onClick={handleUpdateChainSubmit}
+            >
               Submit
             </Button>
             <Button variant="ghost" onClick={onUpdateChainClose}>
