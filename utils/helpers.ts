@@ -122,16 +122,16 @@ export const getAllMembers = async () => {
 };
 
 /**
- * Add a new case to the contract.
+ * Add a new case to the contract and also store in MongoDB.
  */
 export const addCase = async (
   courtId: string,
-  caseId: number,
   caseDescription: string,
   caseType: string,
   petitioner: string,
   respondent: string,
-  startDateTime: number
+  startDateTime: string,
+  status: string
 ) => {
   try {
     if (!ethereumService.contract) {
@@ -139,17 +139,41 @@ export const addCase = async (
     }
     const contract = ethereumService.contract!;
     const totalCases = await contract.totalCases();
+    const caseId = totalCases.toNumber() + 1;
+    const signer = ethereumService.signer!;
+    const submittedBy = await signer.getAddress();
+
+    // Call contract with correct arguments (no caseId)
     const tx = await contract.registerCase(
       courtId,
-      caseId,
       caseDescription,
       caseType,
       petitioner,
       respondent,
-      startDateTime
+      startDateTime,
+      status
     );
     await tx.wait();
-    return { newCaseId: totalCases.toNumber() + 1, status: true };
+
+    // Store in MongoDB in parallel (does not affect contract)
+    await fetch("/api/cases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        courtId,
+        caseId, // This is the local calculated caseId
+        caseDescription,
+        caseType,
+        petitioner,
+        respondent,
+        startDateTime,
+        status,
+        submittedBy,
+        totalEvidences: 0,
+      }),
+    });
+
+    return { newCaseId: caseId, status: true };
   } catch (err: any) {
     console.error(err);
     return { status: false, error: err.message };

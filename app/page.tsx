@@ -70,6 +70,12 @@ export default function HomePage() {
             preserve the sanctity of evidences presented in courts.
           </h2>
         </div>
+        <button
+          className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold shadow hover:bg-blue-700 transition"
+          onClick={() => window.location.href = '/get-started'}
+        >
+          Get Started
+        </button>
       </section>
       <FeatureBoxes />
     </div>

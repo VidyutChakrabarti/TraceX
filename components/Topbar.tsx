@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
@@ -8,14 +8,31 @@ import { IconButton } from '@chakra-ui/react';
 import { useChatbot } from '../context/ChatbotContext';
 
 const ConnectButton = dynamic(
-    () =>
-        import('@rainbow-me/rainbowkit').then((mod) => mod.ConnectButton),
+    () => import('@rainbow-me/rainbowkit').then((mod) => mod.ConnectButton),
     { ssr: false }
 );
 
 const TopBar = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { toggleChatbot } = useChatbot();
+    const [isWalletConnected, setIsWalletConnected] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+    const [showLogout, setShowLogout] = useState(false);
+
+    // SSR hydration fix: only render auth UI after mount
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+        if (typeof window !== 'undefined') {
+            setUserEmail(window.localStorage.getItem("userEmail") || "");
+        }
+    }, []);
+    useEffect(() => {
+        if (!mounted) return;
+        const syncEmail = () => setUserEmail(window.localStorage.getItem("userEmail") || "");
+        window.addEventListener('storage', syncEmail);
+        return () => window.removeEventListener('storage', syncEmail);
+    }, [mounted]);
 
     const linkStyle =
         "text-decoration-none text-[1.15rem] hover:text-red-500 transition-colors duration-300 px-4 pb-1 relative font-cinzel";
@@ -25,6 +42,34 @@ const TopBar = () => {
             {/* Mobile TopBar */}
             <div className="flex items-center justify-between px-4 py-2 md:hidden">
                 <Image src="/tracex1.png" alt="CCITR Logo" width={120} height={90} />
+                <div>
+                    {mounted ? (
+                        isWalletConnected ? (
+                            <ConnectButton />
+                        ) : userEmail ? (
+                            <div className="flex items-center gap-2">
+                                <span className="bg-blue-700 px-3 py-1 rounded text-white">{userEmail}</span>
+                                <button
+                                    className="ml-2 bg-red-600 px-3 py-1 rounded text-white hover:bg-red-700 transition"
+                                    onClick={() => {
+                                        window.localStorage.removeItem("userEmail");
+                                        setUserEmail("");
+                                        window.location.href = '/get-started';
+                                    }}
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="bg-blue-600 px-4 py-1 rounded text-white hover:bg-blue-700 transition"
+                                onClick={() => window.location.href = '/get-started'}
+                            >
+                                Get Started
+                            </button>
+                        )
+                    ) : null}
+                </div>
                 <button onClick={() => setIsSidebarOpen(true)} aria-label="Open Sidebar">
                     <Menu size={24} />
                 </button>
@@ -54,27 +99,7 @@ const TopBar = () => {
                         <a href="/admin" className={linkStyle}>Admin</a>
                         <a href="/statistics" className={linkStyle}>Statistics</a>
                         <a href="/cases" className={linkStyle}>Case-List</a>
-                        {/* Chatbot Icon Option in Mobile Drawer */}
-                        <div className="pt-4 border-t border-gray-300">
-                            <button
-                                onClick={() => { toggleChatbot(); setIsSidebarOpen(false); }}
-                                className="flex items-center gap-2 w-full text-[1.15rem] font-cinzel hover:text-red-500 transition-colors duration-300"
-                            >
-                                <Image
-                                    src="/chatbot-robot.png"
-                                    alt="Chatbot"
-                                    width={30}
-                                    height={30}
-                                    unoptimized={true}
-                                    className="w-8 h-8"
-                                />
-                                Chatbot
-                            </button>
-                        </div>
                     </nav>
-                    <div className="px-4 mt-6">
-                        <ConnectButton />
-                    </div>
                 </div>
             </div>
 
@@ -127,8 +152,16 @@ const TopBar = () => {
                 {/* Right Section */}
                 <div className="flex items-center gap-4">
                     <Image src="/tracex.png" alt="CID Karnataka Logo" width={80} height={80} />
-                    <div className="ml-4">
-                        <ConnectButton /> {/* Now dynamically imported */}
+                    <div className="ml-4 flex items-center gap-2">
+                        <ConnectButton />
+                        {mounted && userEmail && (
+                            <button
+                                className="bg-blue-700 px-3 py-1 rounded text-white ml-2"
+                                onClick={() => window.location.href = '/get-started'}
+                            >
+                                {userEmail}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
