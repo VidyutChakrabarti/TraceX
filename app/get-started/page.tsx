@@ -24,7 +24,7 @@ export default function GetStarted() {
     if (!mounted) return null;
 
     return (
-        <Box minH="90vh" bgGradient="linear(to-br,rgb(238, 247, 255) 40%,rgb(255, 245, 157) 100%)" display="flex" alignItems="center" justifyContent="center" px={{ base: 2, md: 6 }}>
+        <Box minH="100vh" bgGradient="linear(to-br,rgb(238, 247, 255) 40%,rgb(255, 245, 157) 100%)" display="flex" alignItems="center" justifyContent="center" px={{ base: 2, md: 6 }}>
             <Box
                 w="full"
                 maxW="1300px"
@@ -77,12 +77,19 @@ export default function GetStarted() {
                     </Box>
                     <Box mt={2} textAlign="center" display="flex" alignItems="center" justifyContent="center" gap={2}>
                         <Text fontWeight="medium" fontSize="md" color="blue.700" display="inline">
-                            Use the AI chatbot powered by Gemini
+                            Use NyayaMitra Service for voice assisted multi-language Case filing
                         </Text>
-                        {/* Lucide Info Icon with Chakra Tooltip */}
-                        <Tooltip label="Click on tracexai logo in the topbar to use the chatbot." hasArrow placement="top" bg="blue.700" color="white" fontSize="sm">
-                            <span style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                        {/* Lucide External Link Icon with Chakra Tooltip and navigation */}
+                        <Tooltip label="Go to NyayaMitra Service" hasArrow placement="top" bg="blue.700" color="white" fontSize="sm">
+                            <span
+                                style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+                                onClick={() => router.push('/nyayamitra')}
+                                tabIndex={0}
+                                role="button"
+                                aria-label="Go to NyayaMitra Service"
+                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') router.push('/nyayamitra'); }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-external-link" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" x2="21" y1="14" y2="3" /></svg>
                             </span>
                         </Tooltip>
                     </Box>
@@ -140,7 +147,7 @@ export default function GetStarted() {
                                 <Box mt={4} textAlign="center">
                                     <Text fontWeight="bold" mb={2} fontSize={{ base: 'md', md: 'lg' }} color="gray.700">Or sign in with Google</Text>
                                     <Button
-                                        colorScheme="blue"
+                                        colorScheme="red"
                                         w="full"
                                         size="lg"
                                         borderRadius="xl"
