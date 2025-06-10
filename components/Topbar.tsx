@@ -68,7 +68,7 @@ const TopBar = () => {
                     </div>
                     <nav className="flex flex-col space-y-4 px-4">
                         <a href="/" className={linkStyle}>Home</a>
-                        <a href="/admin" className={linkStyle}>Admin</a>
+                        <a href="/nyayamitra" className={linkStyle}>NyayaMitra</a>
                         <a href="/statistics" className={linkStyle}>Statistics</a>
                         <a href="/cases" className={linkStyle}>Case-List</a>
                     </nav>
@@ -140,7 +140,7 @@ const TopBar = () => {
                     </div>
 
                     {/* Separator and Other Links */}
-                    {[{ href: "/admin", label: "Admin" }, { href: "/statistics", label: "Statistics" }, { href: "/cases", label: "Case-List" }].map((link, index) => (
+                    {[{ href: "/nyayamitra", label: "NyayaMitra" }, { href: "/statistics", label: "Statistics" }, { href: "/cases", label: "Case-List" }].map((link, index) => (
                         <div key={index} className="flex items-end">
                             {/* Separator */}
                             <span className="hidden md:inline-block text-gray-500 px-4 pb-1 self-center">|</span>
