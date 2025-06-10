@@ -60,6 +60,12 @@ export default function EmailAuth() {
                         onChange={e => setEmail(e.target.value)}
                         type="email"
                         required
+                        borderColor="gray.500"
+                        borderWidth="2px"
+                        borderRadius="md"
+                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px blue.500' }}
+                        fontSize="md"
+                        p={4}
                     />
                     <Input
                         placeholder="Password"
@@ -67,6 +73,12 @@ export default function EmailAuth() {
                         onChange={e => setPassword(e.target.value)}
                         type="password"
                         required
+                        borderColor="gray.500"
+                        borderWidth="2px"
+                        borderRadius="md"
+                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px blue.500' }}
+                        fontSize="md"
+                        p={4}
                     />
                     <Button type="submit" colorScheme="blue" isLoading={loading} w="full">
                         {mode === "login" ? "Login" : "Sign Up"}

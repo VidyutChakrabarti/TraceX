@@ -42,34 +42,6 @@ const TopBar = () => {
             {/* Mobile TopBar */}
             <div className="flex items-center justify-between px-4 py-2 md:hidden">
                 <Image src="/tracex1.png" alt="CCITR Logo" width={120} height={90} />
-                <div>
-                    {mounted ? (
-                        isWalletConnected ? (
-                            <ConnectButton />
-                        ) : userEmail ? (
-                            <div className="flex items-center gap-2">
-                                <span className="bg-blue-700 px-3 py-1 rounded text-white">{userEmail}</span>
-                                <button
-                                    className="ml-2 bg-red-600 px-3 py-1 rounded text-white hover:bg-red-700 transition"
-                                    onClick={() => {
-                                        window.localStorage.removeItem("userEmail");
-                                        setUserEmail("");
-                                        window.location.href = '/get-started';
-                                    }}
-                                >
-                                    Logout
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                className="bg-blue-600 px-4 py-1 rounded text-white hover:bg-blue-700 transition"
-                                onClick={() => window.location.href = '/get-started'}
-                            >
-                                Get Started
-                            </button>
-                        )
-                    ) : null}
-                </div>
                 <button onClick={() => setIsSidebarOpen(true)} aria-label="Open Sidebar">
                     <Menu size={24} />
                 </button>
@@ -100,6 +72,35 @@ const TopBar = () => {
                         <a href="/statistics" className={linkStyle}>Statistics</a>
                         <a href="/cases" className={linkStyle}>Case-List</a>
                     </nav>
+                    {/* Show email and logout if signed in, else show Get Started */}
+                    <div className="px-4 pt-6 pb-2">
+                        {mounted && userEmail ? (
+                            <div className="flex flex-col gap-2">
+                                <span className="bg-blue-700 px-3 py-1 rounded text-white break-all">{userEmail}</span>
+                                <button
+                                    className="bg-red-600 px-3 py-1 rounded text-white hover:bg-red-700 transition"
+                                    onClick={() => {
+                                        window.localStorage.removeItem("userEmail");
+                                        setUserEmail("");
+                                        window.location.href = '/get-started';
+                                    }}
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="bg-blue-600 px-4 py-2 rounded text-white w-full hover:bg-blue-700 transition"
+                                onClick={() => window.location.href = '/get-started'}
+                            >
+                                Get Started
+                            </button>
+                        )}
+                    </div>
+                    {/* Add ConnectButton at the bottom of the sidebar */}
+                    <div className="mt-auto px-4 pb-6">
+                        <ConnectButton />
+                    </div>
                 </div>
             </div>
 

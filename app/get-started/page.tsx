@@ -22,11 +22,11 @@ export default function GetStarted() {
     if (!mounted) return null;
 
     return (
-        <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
-            <Box maxW="md" w="full" p={8} borderWidth="2px" borderRadius="lg" boxShadow="lg">
-                <Heading mb={6} textAlign="center">Get Started</Heading>
+        <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.50" px={2}>
+            <Box maxW="lg" w="full" p={{ base: 2, sm: 4, md: 8 }} borderWidth="3px" borderColor="black" borderRadius="lg" boxShadow="lg" position="relative" minW={0}>
+                <Heading mb={6} textAlign="center" fontSize={{ base: '2xl', md: '3xl' }}>Get Started</Heading>
                 {userEmail ? (
-                    <VStack spacing={8} align="stretch">
+                    <VStack spacing={6} align="stretch">
                         <Button
                             colorScheme="red"
                             onClick={() => {
@@ -34,19 +34,36 @@ export default function GetStarted() {
                                 setUserEmail(null);
                                 window.location.reload();
                             }}
+                            w="full"
+                            size="lg"
                         >
                             Logout
                         </Button>
+                        <Button
+                            as="a"
+                            href="/cases-viewer"
+                            variant="link"
+                            colorScheme="blue"
+                            fontWeight="bold"
+                            fontSize={{ base: 'md', md: 'lg' }}
+                            textAlign="center"
+                        >
+                            Go to Case Viewer
+                        </Button>
                     </VStack>
                 ) : (
-                    <VStack spacing={8} align="stretch">
+                    <VStack spacing={6} align="stretch">
                         <Box>
-                            <Text fontWeight="bold" mb={2}>Sign in with Email</Text>
-                            <EmailAuth />
+                            <Text fontWeight="bold" mb={2} fontSize={{ base: 'md', md: 'lg' }}>Sign in with Email</Text>
+                            <Box borderWidth="2px" borderColor="gray.500" borderRadius="md" p={{ base: 2, md: 4 }} mb={4}>
+                                <EmailAuth />
+                            </Box>
                             <Box mt={4} textAlign="center">
-                                <Text fontWeight="bold" mb={2}>Or sign in with Google</Text>
+                                <Text fontWeight="bold" mb={2} fontSize={{ base: 'md', md: 'lg' }}>Or sign in with Google</Text>
                                 <Button
                                     colorScheme="red"
+                                    w="full"
+                                    size="lg"
                                     onClick={async () => {
                                         try {
                                             const provider = new GoogleAuthProvider();
