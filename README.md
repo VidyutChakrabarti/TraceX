@@ -14,13 +14,19 @@ npm i
 npm run dev
 ```
 
-Please Use the following links to know more about the refined version:<br><br>
+Please Use the following links to know more about the refined version:<br>
+
 <a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/Refinements.md" target="_blank">
     <img src="https://img.shields.io/badge/See%20What's%20New-Click%20Here-darkblue?style=for-the-badge" alt="DOCS Button"/>
-  </a>
+</a>
 
-  <a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md" target="_blank">
+<a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md" target="_blank">
     <img src="https://img.shields.io/badge/New%20User%20Journeys-Click%20Here-pink?style=for-the-badge" alt="docs Button"/>
+</a><br>
+
+
+<a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/tracex_agents/README.md" target="_blank">
+    <img src="https://img.shields.io/badge/AI%20Chatbot%20and%20Agents-Click%20Here-purple?style=for-the-badge" alt="docs Button"/>
   </a>
 
 ### Powered by Google Technologies
@@ -55,10 +61,10 @@ Please Use the following links to know more about the refined version:<br><br>
 Please see the user-journeys readme
 <a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md">here</a> to know more about how to access the application properly
 
-------------- Previous version -------------<br>
+#### Repository structure / Architecture
+![Architecture](assets/architecture.png)
 
-**Note:** In order to access the application fully in deployed mode, you must first have a proper role that can only be assigned by the Admin. You will be automatically re-routed to the form where you can submit the application. On successful processing you will get the confirmation email.<br/>
-<br/><img src="assets/mail.png" alt="email" width="500"/><br>
+
 
 
 

@@ -37,6 +37,11 @@ For now admin agent will reply to all requests with a valid wallet account addre
 
 -- <a href="https://tracex-drab.vercel.app/request-access">Request Access (for roles)</a>
 
+Upon successful processing of request for role within the platform you will receive an email confirmation: 
+
+<br/><img src="../assets/mail.png" alt="email" width="500"/><br>
+
+
 **Note:** This step is not for the users who get their wallet address from the system itself, their accounts will already be configured with proper permissions.
 
 Please relocate here if you wish to see what's more in store in the refined TraceX: 
