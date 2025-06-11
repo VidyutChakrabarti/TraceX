@@ -362,7 +362,7 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
           .join("\n")}
 `;
       const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         temperature: 0,
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
       });
@@ -1034,8 +1034,8 @@ Timestamp: ${new Date(evidence.timestamp * 1000).toLocaleString()}`
                     <AiOutlineCheckCircle className="text-green-500 text-m cursor-pointer" />
                     <span
                       className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 w-40 bg-black text-white text-center text-xs rounded py-1 transition-opacity duration-300 ${tooltipVisible
-                          ? "opacity-100"
-                          : "opacity-0 group-hover:opacity-100"
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-100"
                         }`}
                     >
                       Validated with EtherScan

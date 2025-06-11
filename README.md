@@ -13,6 +13,17 @@ npm i
 ```bash
 npm run dev
 ```
+
+Please Use the following links to know more about the refined version:<br><br>
+<a href="" target="_blank">
+    <img src="https://img.shields.io/badge/See%20What's%20New-Click%20Here-darkblue?style=for-the-badge" alt="DOCS Button"/>
+  </a>
+
+  <a href="" target="_blank">
+    <img src="https://img.shields.io/badge/New%20User%20Journeys-Click%20Here-pink?style=for-the-badge" alt="docs Button"/>
+  </a>
+
+
 ### UserFlow diagram:
 ![Userflow diagram](assets/userflow.png)
 
@@ -28,6 +39,16 @@ npm run dev
 ### Watch our video to understand how to use the features: 
 [![Watch the video](https://img.youtube.com/vi/QYnjaIpiTPc/0.jpg)](https://www.youtube.com/watch?v=QYnjaIpiTPc)
 
+Please see the user-journeys readme
+<a href="">here</a> to know more about how to access the application properly
+
+------------- Previous version -------------<br>
+
 **Note:** In order to access the application fully in deployed mode, you must first have a proper role that can only be assigned by the Admin. You will be automatically re-routed to the form where you can submit the application. On successful processing you will get the confirmation email.<br/>
-<br/><img src="assets/mail.png" alt="email" width="500"/>
+<br/><img src="assets/mail.png" alt="email" width="500"/><br>
+
+
+
+
+
 
