@@ -3,7 +3,7 @@
 1. We have successfully integrated Google Maps into our platform, enabling Collectors and Analysts to define and manage routes for the secure transfer of physical evidence during custody handovers. Each transfer is geotagged, with route coordinates systematically stored in MongoDB. Leveraging the **Google Maps API** and high-resolution tiles from **Google Earth Engine**, the system provides real-time tracking and precise route recording, ensuring enhanced transparency and accountability throughout the evidence transfer process. (See figure 1)
 
 2. We have further integrated with **Firebase** as mentioned here:
-    - <a href="">Know more about User Journeys</a><br>
+    - <a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md">Know more about User Journeys</a><br>
 
     - Firebase integration now allows us to store user related information like subscription list (for cases) and also authenticate using OAuth and Mail extremely efficiently. (See Figure 2) 
 

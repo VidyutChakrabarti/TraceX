@@ -15,11 +15,11 @@ npm run dev
 ```
 
 Please Use the following links to know more about the refined version:<br><br>
-<a href="" target="_blank">
+<a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/Refinements.md" target="_blank">
     <img src="https://img.shields.io/badge/See%20What's%20New-Click%20Here-darkblue?style=for-the-badge" alt="DOCS Button"/>
   </a>
 
-  <a href="" target="_blank">
+  <a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md" target="_blank">
     <img src="https://img.shields.io/badge/New%20User%20Journeys-Click%20Here-pink?style=for-the-badge" alt="docs Button"/>
   </a>
 
@@ -40,7 +40,7 @@ Please Use the following links to know more about the refined version:<br><br>
 [![Watch the video](https://img.youtube.com/vi/QYnjaIpiTPc/0.jpg)](https://www.youtube.com/watch?v=QYnjaIpiTPc)
 
 Please see the user-journeys readme
-<a href="">here</a> to know more about how to access the application properly
+<a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/UserJourneys.md">here</a> to know more about how to access the application properly
 
 ------------- Previous version -------------<br>
 

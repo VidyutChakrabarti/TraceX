@@ -41,6 +41,6 @@ For now admin agent will reply to all requests with a valid wallet account addre
 
 Please relocate here if you wish to see what's more in store in the refined TraceX: 
 
-<a href="" target="_blank">
+<a href="https://github.com/VidyutChakrabarti/TraceX/blob/latest/Docs/Refinements.md" target="_blank">
     <img src="https://img.shields.io/badge/See%20What's%20New-Click%20Here-darkblue?style=for-the-badge" alt="Understand the Solution Button"/>
   </a>
