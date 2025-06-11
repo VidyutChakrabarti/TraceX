@@ -7,9 +7,11 @@
 
     - Firebase integration now allows us to store user related information like subscription list (for cases) and also authenticate using OAuth and Mail extremely efficiently. (See Figure 2) 
 
-3. We have made more Integration with **Google AI** using more advanced Gemini models like gemini-flash-2.0 for chatbots and also use AI agents using **Google Agents ADK** to process mails and automate the process of account address creation in web3 and subsequent handling of the mail to the user who requested access to a particular case in subscription list. (See figure 3)
+3. We have made more Integrations with **Google AI** using more advanced Gemini models like gemini-flash-2.0 for chatbots and also use AI agents using **Google Agents ADK** to process mails and automate the process of account address creation in web3 and subsequent handling of the mail to the user who requested access to a particular case in subscription list. (See figure 3)
 
 4. We have intorduced a completely new use case within our application for more social good. This new feature of TraceX is called "NyayaMitra". It is integrated with **Google Cloud text-to-speech, Gemini and Google Translate** for allowing users of various backgrounds to fill out case/law related forms with ease. We use voice assistance in multiple languages to guide the user in filling forms which may seem too complex. Thus TraceX now has a new cause of bringing Justice to more underprivileged communities and people who may not have the means to fill out legal forms with the assitance of **Google AI**. (See Figure 4)
+
+5. We can further use Google Cloud storage as a backup for all the data within the blockchain and use Google Big Query for querying blockchain data, thus making the hash matching for integration checking of evidences much more scalable.
 
 <br><br>
 
