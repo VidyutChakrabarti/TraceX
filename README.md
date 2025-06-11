@@ -23,6 +23,19 @@ Please Use the following links to know more about the refined version:<br><br>
     <img src="https://img.shields.io/badge/New%20User%20Journeys-Click%20Here-pink?style=for-the-badge" alt="docs Button"/>
   </a>
 
+### Powered by Google Technologies
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Google%20Maps-4285F4?logo=googlemaps&logoColor=white&style=for-the-badge" alt="Google Maps"/>
+  <img src="https://img.shields.io/badge/Earth%20Engine-34A853?logo=googleearth&logoColor=white&style=for-the-badge" alt="Google Earth Engine"/>
+  <img src="https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black&style=for-the-badge" alt="Firebase"/>
+  <img src="https://img.shields.io/badge/Gemini%20AI-4285F4?logo=google&logoColor=white&style=for-the-badge" alt="Gemini AI"/>
+  <img src="https://img.shields.io/badge/Agents%20ADK-34A853?logo=google&logoColor=white&style=for-the-badge" alt="Google Agents ADK"/>
+  <img src="https://img.shields.io/badge/Text--to--Speech-4285F4?logo=google&logoColor=white&style=for-the-badge" alt="Google Cloud Text-to-Speech"/>
+  <img src="https://img.shields.io/badge/Translate-34A853?logo=googletranslate&logoColor=white&style=for-the-badge" alt="Google Translate"/>
+  <img src="https://img.shields.io/badge/Cloud%20Storage-4285F4?logo=googlecloud&logoColor=white&style=for-the-badge" alt="Google Cloud Storage"/>
+  <img src="https://img.shields.io/badge/BigQuery-4285F4?logo=googlecloud&logoColor=white&style=for-the-badge" alt="Google BigQuery"/>
+</p>
 
 ### UserFlow diagram:
 ![Userflow diagram](assets/userflow.png)
