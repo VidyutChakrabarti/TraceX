@@ -55,7 +55,9 @@ Please Use the following links to know more about the refined version:<br>
 ### Gallery: 
 ![Gallery gif](assets/gallery.gif)
 
-### Watch our video to understand how to use the features: 
+> ***Watch our refined version video here:*** <a href="https://www.youtube.com/watch?v=OJGDCeFizVA">DEMO</a>
+
+#### Watch our video to understand how to use the features: 
 [![Watch the video](https://img.youtube.com/vi/QYnjaIpiTPc/0.jpg)](https://www.youtube.com/watch?v=QYnjaIpiTPc)
 
 Please see the user-journeys readme
